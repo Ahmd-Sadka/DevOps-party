@@ -7,14 +7,16 @@ import { ArrowLeft, Trophy, Medal } from 'lucide-react';
 
 // Mock leaderboard data for now - will be replaced with Supabase
 const mockLeaderboard = [
-  { id: '1', username: 'DevMaster', avatarId: 'wizard', totalXP: 5420, level: 10, accuracy: 94 },
-  { id: '2', username: 'TerminalNinja', avatarId: 'ninja', totalXP: 4890, level: 9, accuracy: 91 },
-  { id: '3', username: 'DockerWhale', avatarId: 'whale', totalXP: 4350, level: 8, accuracy: 88 },
-  { id: '4', username: 'GitGuru', avatarId: 'brain', totalXP: 3920, level: 7, accuracy: 85 },
-  { id: '5', username: 'BashKing', avatarId: 'fire', totalXP: 3540, level: 7, accuracy: 82 },
-  { id: '6', username: 'LinuxLord', avatarId: 'penguin', totalXP: 3100, level: 6, accuracy: 79 },
-  { id: '7', username: 'CloudRunner', avatarId: 'rocket', totalXP: 2780, level: 5, accuracy: 76 },
-  { id: '8', username: 'PipelineProz', avatarId: 'robot', totalXP: 2340, level: 5, accuracy: 73 },
+  { id: '1', username: 'Ahmed Mohamedy', avatarId: 'fire', totalXP: 12850, level: 15, accuracy: 98 },
+  { id: '2', username: 'DevMaster', avatarId: 'wizard', totalXP: 5420, level: 10, accuracy: 94 },
+  { id: '3', username: 'TerminalNinja', avatarId: 'ninja', totalXP: 4890, level: 9, accuracy: 91 },
+  { id: '4', username: 'DockerWhale', avatarId: 'whale', totalXP: 4350, level: 8, accuracy: 88 },
+  { id: '5', username: 'GitGuru', avatarId: 'brain', totalXP: 3920, level: 7, accuracy: 85 },
+  { id: '6', username: 'BashKing', avatarId: 'fire', totalXP: 3540, level: 7, accuracy: 82 },
+  { id: '7', username: 'LinuxLord', avatarId: 'penguin', totalXP: 3100, level: 6, accuracy: 79 },
+  { id: '8', username: 'CloudRunner', avatarId: 'rocket', totalXP: 2780, level: 5, accuracy: 76 },
+  { id: '9', username: 'PipelineProz', avatarId: 'robot', totalXP: 2340, level: 5, accuracy: 73 },
+  { id: '10', username: 'KubeKnight', avatarId: 'shield', totalXP: 2100, level: 4, accuracy: 71 },
 ];
 
 const Leaderboard = () => {

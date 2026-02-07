@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { LEVELS } from '@/types/game';
-import { ArrowLeft, BookOpen, Lock, MessageCircle, Play, Sparkles } from 'lucide-react';
+import { ArrowLeft, BookOpen, Lock, MessageCircle, Play, Sparkles, Briefcase, Mic } from 'lucide-react';
 
 const JUNIOR_LEVEL = LEVELS.find((l) => l.id === 'junior-interview');
 
@@ -32,15 +32,40 @@ const Interview = () => {
         </div>
 
         <p className="text-muted-foreground mb-6">
-          Practice common DevOps & SRE interview questions. Junior level is ready; Senior coming soon.
+          Practice common DevOps & SRE interview questions. Choose your preferred mode below.
         </p>
 
+        {/* NEW: Mock Interview Simulation */}
+        <Card className="p-6 mb-6 border-primary bg-gradient-to-br from-primary/10 to-primary/5 hover:border-primary/70 transition-colors">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-primary/20 rounded-xl">
+              <Mic className="h-8 w-8 text-primary" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-xl font-bold">Mock Interview Simulation</h2>
+                <span className="px-2 py-0.5 rounded-full bg-primary/20 text-primary text-xs font-medium">NEW</span>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Practice answering real interview questions. Get hints, review key points, and rate your own performance. Earn up to 200 XP!
+              </p>
+              <Button
+                className="btn-glow gap-2"
+                onClick={() => navigate('/interview/simulation')}
+              >
+                <Briefcase className="h-4 w-4" />
+                Start Simulation
+              </Button>
+            </div>
+          </div>
+        </Card>
+
         {/* Junior Interview */}
-        <Card className="p-6 mb-6 border-primary/30 bg-card hover:border-primary/50 transition-colors">
+        <Card className="p-6 mb-6 border-border bg-card hover:border-primary/30 transition-colors">
           <div className="flex items-start gap-4">
             <div className="text-5xl">{JUNIOR_LEVEL?.emoji ?? '📋'}</div>
             <div className="flex-1">
-              <h2 className="text-xl font-bold mb-1">Junior Level</h2>
+              <h2 className="text-xl font-bold mb-1">Junior Level Questions</h2>
               <p className="text-sm text-muted-foreground mb-4">
                 Linux, networking, Bash, containers, Kubernetes, Terraform, CI/CD, Ansible, AWS & general DevOps — like real junior DevOps/SRE interviews.
               </p>
@@ -51,14 +76,15 @@ const Interview = () => {
                   onClick={() => navigate('/interview/discussion')}
                 >
                   <MessageCircle className="mr-2 h-4 w-4" />
-                  Discussion style (hint → reveal answer)
+                  Discussion style
                 </Button>
                 <Button
-                  className="btn-glow gap-2"
+                  variant="secondary"
+                  className="gap-2"
                   onClick={() => navigate('/quiz/junior-interview')}
                 >
                   <Play className="h-4 w-4" />
-                  MCQ quiz (answers shuffled)
+                  MCQ quiz mode
                 </Button>
               </div>
             </div>
@@ -78,7 +104,7 @@ const Interview = () => {
                 </span>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
-                Architecture, scaling, incident response, SLOs, and system design. We’re building this section — check back later.
+                Architecture, scaling, incident response, SLOs, and system design. We're building this section — check back later.
               </p>
               <Button variant="outline" disabled className="opacity-70">
                 <Sparkles className="mr-2 h-4 w-4" />
