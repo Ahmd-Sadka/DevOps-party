@@ -22,6 +22,10 @@ type GameAction =
   | { type: 'COMPLETE_DAILY_CHALLENGE'; payload: string }
   | { type: 'DEFEAT_BOSS'; payload: LevelId }
   | { type: 'CLEAR_QUIZ' }
+  | { type: 'RECORD_WRONG_ANSWER'; payload: string }
+  | { type: 'REMOVE_WRONG_ANSWER'; payload: string }
+  | { type: 'BOOKMARK_QUESTION'; payload: string }
+  | { type: 'UNBOOKMARK_QUESTION'; payload: string }
   | { type: 'RESET_GAME' };
 
 const initialLevelProgress: Record<LevelId, LevelProgress> = {
@@ -64,6 +68,8 @@ const createNewUser = (username: string, avatarId: string): UserProgress => ({
     bossesDefeated: 0,
     dailyChallengesCompleted: 0,
   },
+  wrongQuestionIds: [],
+  bookmarkedQuestionIds: [],
   powerUps: {
     fifty_fifty: 2,
     skip: 1,
@@ -276,6 +282,48 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'CLEAR_QUIZ':
       return { ...state, currentQuiz: null };
 
+    case 'RECORD_WRONG_ANSWER':
+      if (!state.user) return state;
+      if (state.user.wrongQuestionIds.includes(action.payload)) return state;
+      return {
+        ...state,
+        user: {
+          ...state.user,
+          wrongQuestionIds: [...state.user.wrongQuestionIds, action.payload],
+        },
+      };
+
+    case 'REMOVE_WRONG_ANSWER':
+      if (!state.user) return state;
+      return {
+        ...state,
+        user: {
+          ...state.user,
+          wrongQuestionIds: state.user.wrongQuestionIds.filter(id => id !== action.payload),
+        },
+      };
+
+    case 'BOOKMARK_QUESTION':
+      if (!state.user) return state;
+      if (state.user.bookmarkedQuestionIds.includes(action.payload)) return state;
+      return {
+        ...state,
+        user: {
+          ...state.user,
+          bookmarkedQuestionIds: [...state.user.bookmarkedQuestionIds, action.payload],
+        },
+      };
+
+    case 'UNBOOKMARK_QUESTION':
+      if (!state.user) return state;
+      return {
+        ...state,
+        user: {
+          ...state.user,
+          bookmarkedQuestionIds: state.user.bookmarkedQuestionIds.filter(id => id !== action.payload),
+        },
+      };
+
     case 'RESET_GAME':
       localStorage.removeItem('devops-quest-user');
       return { user: null, currentQuiz: null, isOnboarding: true };
@@ -314,6 +362,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
         // Migrate old users to include new fields
         const migratedUser = {
           ...user,
+          currentLevel: calculateLevel(user.totalXP || 0),
+          wrongQuestionIds: user.wrongQuestionIds || [],
+          bookmarkedQuestionIds: user.bookmarkedQuestionIds || [],
           powerUps: user.powerUps || { fifty_fifty: 2, skip: 1, time_freeze: 1, hint: 2 },
           dailyChallengeCompleted: user.dailyChallengeCompleted || [],
           stats: {

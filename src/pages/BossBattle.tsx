@@ -37,6 +37,11 @@ const BossBattle = () => {
     "The next question will be your doom!",
     "Pathetic. Try the next.",
     "One hit. Many more to go.",
+    "Even a broken pipeline deploys twice a day...",
+    "My YAML indentation will destroy you!",
+    "You dare oppose the master of outages?!",
+    "That was the easy one. Now face true DevOps pain!",
+    "Your kubectl skills are... adequate. Barely.",
   ];
   const BOSS_TAUNTS_WRONG = [
     "Too slow! Too weak!",
@@ -44,6 +49,11 @@ const BossBattle = () => {
     "Wrong! Feel my power!",
     "Another one bites the dust!",
     "Is that all you've got?",
+    "Back to studying, mortal!",
+    "I've seen interns with better answers!",
+    "Your terraform plan has been REJECTED!",
+    "That answer just triggered a P0 incident!",
+    "Even ChatGPT wouldn't give that answer!",
   ];
 
   const user = state.user;
@@ -253,11 +263,14 @@ const BossBattle = () => {
         
         {phase === 'intro' && level && (
           <div className="text-center space-y-6 animate-scale-in">
-            <div className="text-8xl animate-pulse">{level.emoji}</div>
+            <div className="text-8xl animate-pulse dramatic-shake">{level.emoji}</div>
             <h2 className="text-4xl font-bold text-destructive">
               {level.name} BOSS APPROACHES!
             </h2>
             <p className="text-xl text-muted-foreground">Prepare yourself...</p>
+            <p className="text-sm text-destructive/60 italic animate-pulse">
+              "Only the hard and evil questions await you here..."
+            </p>
           </div>
         )}
 
@@ -381,10 +394,17 @@ const BossBattle = () => {
             <Trophy className="h-24 w-24 text-xp mx-auto" />
             <h2 className="text-4xl font-bold gradient-text">VICTORY!</h2>
             <p className="text-xl text-muted-foreground">You defeated the {level?.name} Boss!</p>
+            <p className="text-sm text-muted-foreground/70 italic">
+              {combo >= 3 ? `"${combo}-hit combo! The boss never stood a chance!"` :
+               `"The boss has been vanquished. Your DevOps knowledge prevails!"`}
+            </p>
             <div className="flex items-center justify-center gap-2 text-xp">
               <Zap className="h-6 w-6" />
-              <span className="text-2xl font-bold">+200 XP</span>
+              <span className="text-2xl font-bold">+{200 + combo * 10} XP</span>
             </div>
+            {combo > 0 && (
+              <p className="text-xs text-muted-foreground">({combo} combo bonus: +{combo * 10} XP)</p>
+            )}
             <Button onClick={() => setPhase('select')} className="btn-glow">
               Return to Arena
             </Button>
@@ -396,6 +416,11 @@ const BossBattle = () => {
             <Skull className="h-24 w-24 text-destructive mx-auto" />
             <h2 className="text-4xl font-bold text-destructive">DEFEATED</h2>
             <p className="text-xl text-muted-foreground">The boss was too strong this time...</p>
+            <p className="text-sm text-muted-foreground/70 italic">
+              {playerHealth <= 0 && bossHealth > 50 
+                ? '"Sometimes the deployment fails. Rollback and try again."' 
+                : '"So close! You almost had it. Review and come back stronger!"'}
+            </p>
             <Button onClick={() => setPhase('select')} variant="outline">
               Try Again
             </Button>

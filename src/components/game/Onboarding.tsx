@@ -10,6 +10,10 @@ const funMessages = [
   "Awesome name! Let's turn you into a DevOps wizard 🧙",
   "Welcome aboard! Time to master the terminal 💻",
   "Great choice! Your DevOps journey begins now 🚀",
+  "Legend has it, this name will appear on many git commits! 🌟",
+  "Excellent! The Kubernetes cluster trembles at your name 😱",
+  "That's the name of a future SRE legend right there! 🏆",
+  "Perfect! Even Terraform couldn't plan a better name 🏗️",
 ];
 
 const Onboarding = () => {

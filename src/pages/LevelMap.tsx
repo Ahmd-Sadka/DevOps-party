@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { LEVELS } from '@/types/game';
-import { ArrowLeft, Lock, Check, Play } from 'lucide-react';
+import { ArrowLeft, Lock, Check, Play, BookOpen } from 'lucide-react';
+import { getStudyContentForLevel } from '@/data/study-cards';
 
 const LevelMap = () => {
   const { state } = useGame();
@@ -66,12 +67,25 @@ const LevelMap = () => {
                     </div>
                   </div>
 
-                  <div>
+                  <div className="flex flex-col gap-2 items-end">
                     {isUnlocked ? (
-                      <Button className="btn-glow">
-                        <Play className="mr-2 h-4 w-4" />
-                        {isCompleted ? 'Replay' : 'Start'}
-                      </Button>
+                      <>
+                        <Button className="btn-glow" onClick={(e) => { e.stopPropagation(); navigate(`/quiz/${level.id}`); }}>
+                          <Play className="mr-2 h-4 w-4" />
+                          {isCompleted ? 'Replay' : 'Start'}
+                        </Button>
+                        {getStudyContentForLevel(level.id).length > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs"
+                            onClick={(e) => { e.stopPropagation(); navigate(`/study/${level.id}`); }}
+                          >
+                            <BookOpen className="mr-1 h-3 w-3" />
+                            Study First
+                          </Button>
+                        )}
+                      </>
                     ) : (
                       <div className="text-right">
                         <p className="text-sm text-muted-foreground">Requires</p>

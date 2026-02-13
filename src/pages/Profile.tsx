@@ -3,10 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { BADGES, LEVELS, getXPForNextLevel, AVATARS } from '@/types/game';
+import { BADGES, LEVELS, getXPForNextLevel, AVATARS, calculateLevel } from '@/types/game';
 import { useBadges } from '@/hooks/useBadges';
 import { useEasterEggs } from '@/hooks/useEasterEggs';
 import { ArrowLeft, Trophy, Target, Zap, Star, Flame, Award, BarChart3, Sparkles } from 'lucide-react';
+
+const getPlayerTitle = (xp: number, accuracy: number, bosses: number) => {
+  if (xp >= 10000 && accuracy >= 90) return { title: 'The SRE Supreme', badge: '🌟' };
+  if (xp >= 5000) return { title: 'Infrastructure Overlord', badge: '👑' };
+  if (bosses >= 5) return { title: 'Boss Slayer', badge: '⚔️' };
+  if (accuracy >= 90) return { title: 'Precision Engineer', badge: '🎯' };
+  if (xp >= 2000) return { title: 'Cloud Architect', badge: '☁️' };
+  if (xp >= 1000) return { title: 'Pipeline Builder', badge: '🏗️' };
+  if (xp >= 500) return { title: 'Container Wrangler', badge: '🐳' };
+  if (xp >= 100) return { title: 'Terminal Apprentice', badge: '💻' };
+  return { title: 'Fresh Recruit', badge: '🆕' };
+};
 
 const Profile = () => {
   const { state } = useGame();
@@ -26,6 +38,7 @@ const Profile = () => {
   const accuracy = user.stats.totalQuestionsAnswered > 0
     ? Math.round((user.stats.correctAnswers / user.stats.totalQuestionsAnswered) * 100)
     : 0;
+  const playerTitle = getPlayerTitle(user.totalXP, accuracy, user.stats.bossesDefeated);
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -46,12 +59,17 @@ const Profile = () => {
                 {avatar?.emoji || '👤'}
               </div>
               <div className="absolute -bottom-2 -right-2 bg-xp text-xp-foreground px-2 py-1 rounded-full text-xs font-bold">
-                Lvl {user.currentLevel}
+                Lvl {calculateLevel(user.totalXP)}
               </div>
             </div>
             
             <div className="flex-1">
-              <h2 className="text-2xl font-bold mb-1">{user.username}</h2>
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-2xl font-bold">{user.username}</h2>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 font-medium">
+                  {playerTitle.badge} {playerTitle.title}
+                </span>
+              </div>
               <p className="text-muted-foreground text-sm mb-3">{avatar?.description}</p>
               
               <div className="space-y-2">
@@ -61,7 +79,7 @@ const Profile = () => {
                 </div>
                 <Progress value={xpProgress.progress} className="h-2" />
                 <p className="text-xs text-muted-foreground">
-                  {xpProgress.current} / {xpProgress.required} to Level {user.currentLevel + 1}
+                  {xpProgress.current} / {xpProgress.required} to Level {calculateLevel(user.totalXP) + 1}
                 </p>
               </div>
             </div>
@@ -126,7 +144,7 @@ const Profile = () => {
             <div className="p-3 rounded-lg bg-muted/30">
               <p className="text-sm text-muted-foreground">Fastest Answer</p>
               <p className="text-xl font-bold">
-                {user.stats.fastestAnswer === Infinity ? '-' : `${user.stats.fastestAnswer.toFixed(1)}s`}
+                {!user.stats.fastestAnswer || user.stats.fastestAnswer === Infinity ? '-' : `${(user.stats.fastestAnswer ?? 0).toFixed(1)}s`}
               </p>
             </div>
           </div>

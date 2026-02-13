@@ -3,9 +3,10 @@ import { useGame } from '@/contexts/GameContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Terminal as TerminalIcon, Zap, Trophy, Clock, SkipForward } from 'lucide-react';
+import { ArrowLeft, Terminal as TerminalIcon, Zap, Trophy, Clock, SkipForward, FlaskConical, BookOpen } from 'lucide-react';
 import { useConfetti } from '@/hooks/useConfetti';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
+import { TERMINAL_SCENARIOS, TerminalScenario } from '@/data/terminal-scenarios';
 
 interface TerminalChallenge {
   id: string;
@@ -84,7 +85,17 @@ const TerminalPage = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [completedChallenges, setCompletedChallenges] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'commands' | 'scenarios'>('commands');
+  // Scenario Lab state
+  const [activeScenario, setActiveScenario] = useState<TerminalScenario | null>(null);
+  const [scenarioStep, setScenarioStep] = useState(0);
+  const [scenarioHistory, setScenarioHistory] = useState<Array<{ type: 'prompt' | 'output' | 'error' | 'success' | 'info'; text: string }>>([]);
+  const [scenarioInput, setScenarioInput] = useState('');
+  const [scenarioPhase, setScenarioPhase] = useState<'select' | 'playing' | 'complete'>('select');
+  const [scenarioXP, setScenarioXP] = useState(0);
   const terminalRef = useRef<HTMLDivElement>(null);
+  const scenarioTermRef = useRef<HTMLDivElement>(null);
+  const scenarioInputRef = useRef<HTMLInputElement>(null);
 
   const user = state.user;
 
@@ -233,6 +244,92 @@ const TerminalPage = () => {
     setTimeout(() => nextChallenge(), 500);
   };
 
+  useEffect(() => {
+    if (scenarioTermRef.current) {
+      scenarioTermRef.current.scrollTop = scenarioTermRef.current.scrollHeight;
+    }
+  }, [scenarioHistory]);
+
+  const startScenario = (scenario: TerminalScenario) => {
+    setActiveScenario(scenario);
+    setScenarioStep(0);
+    setScenarioXP(0);
+    setScenarioPhase('playing');
+    setScenarioInput('');
+    const step = scenario.steps[0];
+    setScenarioHistory([
+      { type: 'output', text: `╔══════════════════════════════════════════╗` },
+      { type: 'output', text: `║  ${scenario.emoji}  SCENARIO: ${scenario.title.toUpperCase()}` },
+      { type: 'output', text: `╚══════════════════════════════════════════╝` },
+      { type: 'output', text: '' },
+      { type: 'info', text: scenario.description },
+      { type: 'output', text: '' },
+      { type: 'output', text: `━━━ Step 1/${scenario.steps.length} ━━━` },
+      { type: 'prompt', text: `📋 ${step.instruction}` },
+    ]);
+    setTimeout(() => scenarioInputRef.current?.focus(), 100);
+  };
+
+  const handleScenarioSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeScenario || scenarioPhase !== 'playing') return;
+
+    const step = activeScenario.steps[scenarioStep];
+    const normalized = scenarioInput.trim().toLowerCase().replace(/\s+/g, ' ');
+    const expected = step.expectedCommand.toLowerCase().replace(/\s+/g, ' ');
+    const alts = (step.alternativeCommands || []).map(c => c.toLowerCase().replace(/\s+/g, ' '));
+    const isCorrect = normalized === expected || alts.includes(normalized);
+
+    setScenarioHistory(h => [...h, { type: 'prompt', text: `$ ${scenarioInput}` }]);
+
+    if (isCorrect) {
+      playSound('correct');
+      const stepXP = Math.round(activeScenario.xpReward / activeScenario.steps.length);
+      setScenarioXP(prev => prev + stepXP);
+
+      setScenarioHistory(h => [
+        ...h,
+        { type: 'output', text: step.simulatedOutput },
+        { type: 'success', text: `✅ Correct! +${stepXP} XP` },
+        { type: 'info', text: `📖 ${step.educationalNote}` },
+        { type: 'output', text: '' },
+      ]);
+
+      const nextStep = scenarioStep + 1;
+      if (nextStep >= activeScenario.steps.length) {
+        // Scenario complete
+        const totalXP = scenarioXP + stepXP;
+        dispatch({ type: 'ADD_XP', payload: totalXP });
+        setScenarioHistory(h => [
+          ...h,
+          { type: 'output', text: `╔══════════════════════════════════════════╗` },
+          { type: 'success', text: `║  🎉 SCENARIO COMPLETE! +${totalXP} XP  ` },
+          { type: 'output', text: `╚══════════════════════════════════════════╝` },
+        ]);
+        burstConfetti();
+        playSound('levelUp');
+        setScenarioPhase('complete');
+      } else {
+        setScenarioStep(nextStep);
+        const next = activeScenario.steps[nextStep];
+        setScenarioHistory(h => [
+          ...h,
+          { type: 'output', text: `━━━ Step ${nextStep + 1}/${activeScenario.steps.length} ━━━` },
+          { type: 'prompt', text: `📋 ${next.instruction}` },
+        ]);
+      }
+    } else {
+      playSound('wrong');
+      setScenarioHistory(h => [
+        ...h,
+        { type: 'error', text: `❌ Not quite. Try again!` },
+        { type: 'output', text: `💡 Hint: ${step.hint}` },
+      ]);
+    }
+
+    setScenarioInput('');
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -255,7 +352,140 @@ const TerminalPage = () => {
           </div>
         </div>
 
-        {!isPlaying ? (
+        {/* Tab bar */}
+        <div className="flex gap-2 mb-6">
+          <Button
+            variant={activeTab === 'commands' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('commands')}
+            className="flex-1"
+          >
+            <TerminalIcon className="mr-2 h-4 w-4" />
+            Command Challenge
+          </Button>
+          <Button
+            variant={activeTab === 'scenarios' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('scenarios')}
+            className="flex-1"
+          >
+            <FlaskConical className="mr-2 h-4 w-4" />
+            Scenario Lab
+          </Button>
+        </div>
+
+        {/* Scenario Lab Tab */}
+        {activeTab === 'scenarios' && (
+          <>
+            {scenarioPhase === 'select' && (
+              <div className="space-y-4">
+                <Card className="p-6 bg-gradient-to-br from-purple-500/10 to-blue-500/10 border-purple-500/30">
+                  <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
+                    <FlaskConical className="h-5 w-5 text-purple-400" />
+                    Scenario Lab
+                  </h2>
+                  <p className="text-muted-foreground mb-4">
+                    Real-world troubleshooting scenarios. Follow the steps, type the right commands, and learn the debugging process.
+                  </p>
+                </Card>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {TERMINAL_SCENARIOS.map(scenario => (
+                    <Card
+                      key={scenario.id}
+                      className="p-5 cursor-pointer transition-all hover:scale-[1.02] hover:border-primary/50"
+                      onClick={() => startScenario(scenario)}
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="text-3xl">{scenario.emoji}</span>
+                        <div className="flex-1">
+                          <h3 className="font-bold">{scenario.title}</h3>
+                          <p className="text-xs text-muted-foreground mb-2">{scenario.description}</p>
+                          <div className="flex items-center gap-3 text-xs">
+                            <span className={`px-2 py-0.5 rounded-full ${
+                              scenario.difficulty === 'medium' ? 'bg-yellow-500/10 text-yellow-500' :
+                              scenario.difficulty === 'hard' ? 'bg-orange-500/10 text-orange-500' :
+                              'bg-red-500/10 text-red-500'
+                            }`}>
+                              {scenario.difficulty}
+                            </span>
+                            <span className="text-muted-foreground">{scenario.steps.length} steps</span>
+                            <span className="text-xp">+{scenario.xpReward} XP</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(scenarioPhase === 'playing' || scenarioPhase === 'complete') && activeScenario && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-card rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">{activeScenario.emoji}</span>
+                    <div>
+                      <p className="font-semibold text-sm">{activeScenario.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Step {Math.min(scenarioStep + 1, activeScenario.steps.length)}/{activeScenario.steps.length}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-bold text-xp">{scenarioXP} XP</span>
+                    {scenarioPhase === 'complete' && (
+                      <Button size="sm" variant="outline" onClick={() => { setScenarioPhase('select'); setActiveScenario(null); }}>
+                        Back
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <Card className="bg-gray-950 border-gray-800 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-gray-900 border-b border-gray-800">
+                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                    <div className="w-3 h-3 rounded-full bg-green-500" />
+                    <span className="ml-4 text-xs text-gray-500 font-mono">scenario-lab ~ {activeScenario.title}</span>
+                  </div>
+                  <div ref={scenarioTermRef} className="p-4 h-[400px] overflow-y-auto font-mono text-sm">
+                    {scenarioHistory.map((line, i) => (
+                      <div
+                        key={i}
+                        className={`leading-relaxed ${
+                          line.type === 'prompt' ? 'text-cyan-400' :
+                          line.type === 'output' ? 'text-gray-400' :
+                          line.type === 'error' ? 'text-red-400' :
+                          line.type === 'success' ? 'text-green-400' :
+                          line.type === 'info' ? 'text-blue-400 italic' : ''
+                        }`}
+                      >
+                        {line.text || '\u00A0'}
+                      </div>
+                    ))}
+                    {scenarioPhase === 'playing' && (
+                      <form onSubmit={handleScenarioSubmit} className="flex items-center mt-2">
+                        <span className="text-green-400 mr-2">$</span>
+                        <input
+                          ref={scenarioInputRef}
+                          type="text"
+                          value={scenarioInput}
+                          onChange={(e) => setScenarioInput(e.target.value)}
+                          className="flex-1 bg-transparent outline-none text-white caret-green-400"
+                          autoFocus
+                          autoComplete="off"
+                          spellCheck={false}
+                        />
+                        <span className="animate-pulse text-green-400">▋</span>
+                      </form>
+                    )}
+                  </div>
+                </Card>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Commands Tab */}
+        {activeTab === 'commands' && !isPlaying && (
           <div className="space-y-6">
             <Card className="p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/30">
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -300,7 +530,9 @@ const TerminalPage = () => {
               </Card>
             )}
           </div>
-        ) : (
+        )}
+
+        {activeTab === 'commands' && isPlaying && (
           <div className="space-y-4">
             {/* Game Stats Bar */}
             <div className="flex items-center justify-between p-4 bg-card rounded-lg border">

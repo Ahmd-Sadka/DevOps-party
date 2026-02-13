@@ -62,6 +62,8 @@ export interface UserProgress {
   totalXP: number;
   currentLevel: number;
   completedQuestions: string[];
+  wrongQuestionIds: string[];
+  bookmarkedQuestionIds: string[];
   levelProgress: Record<LevelId, LevelProgress>;
   earnedBadges: string[];
   streak: StreakData;
